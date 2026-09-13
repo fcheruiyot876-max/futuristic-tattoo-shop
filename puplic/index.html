@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CYBERINK // Futuristic Tattoo Studio</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #07070d;
+      --card-bg: #11111e;
+      --pink-neon: #ff007f;
+      --pink-glow: rgba(255, 0, 127, 0.4);
+      --cyan-neon: #00f3ff;
+      --cyan-glow: rgba(0, 243, 255, 0.3);
+      --text-main: #e0e6ed;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Rajdhani', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(255, 0, 127, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(0, 243, 255, 0.08) 0%, transparent 40%);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 5%;
+      border-bottom: 1px solid rgba(255, 0, 127, 0.2);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(7, 7, 13, 0.85);
+    }
+
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px var(--pink-glow), 0 0 20px var(--pink-glow);
+    }
+
+    .logo span {
+      color: var(--pink-neon);
+    }
+
+    nav button {
+      background: transparent;
+      border: 1px solid var(--cyan-neon);
+      color: var(--cyan-neon);
+      padding: 0.6rem 1.4rem;
+      font-size: 1rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--cyan-glow);
+      transition: all 0.3s ease;
+      clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    }
+
+    nav button:hover {
+      background: var(--cyan-neon);
+      color: #000;
+      box-shadow: 0 0 20px var(--cyan-neon);
+    }
+
+    .hero {
+      text-align: center;
+      padding: 5rem 1rem 3rem;
+    }
+
+    .hero h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 3.5rem;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      color: #fff;
+      margin-bottom: 1rem;
+      text-shadow: 0 0 15px var(--pink-glow);
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      color: #8a99ad;
+      max-width: 600px;
+      margin: 0 auto 2rem;
+    }
+
+    .filter-bar {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 3rem;
+    }
+
+    .filter-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #aaa;
+      padding: 0.5rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .filter-btn.active, .filter-btn:hover {
+      border-color: var(--pink-neon);
+      color: #fff;
+      box-shadow: 0 0 12px var(--pink-glow);
+      background: rgba(255, 0, 127, 0.1);
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 25px;
+      padding: 0 5% 5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .tattoo-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+
+    .tattoo-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--pink-neon);
+      box-shadow: 0 10px 25px var(--pink-glow);
+    }
+
+    .tattoo-card.pink-theme {
+      border-color: rgba(255, 0, 127, 0.4);
+    }
+
+    .tattoo-card img {
+      width: 100%;
+      height: 320px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .tattoo-info {
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tattoo-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.1rem;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 2px;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+
+    .badge-pink {
+      background: var(--pink-neon);
+      color: #fff;
+      box-shadow: 0 0 8px var(--pink-glow);
+    }
+
+    .badge-cyber {
+      background: var(--cyan-neon);
+      color: #000;
+      box-shadow: 0 0 8px var(--cyan-glow);
+    }
+
+    .chat-section {
+      max-width: 800px;
+      margin: 0 auto 5rem;
+      padding: 0 1rem;
+    }
+
+    .chat-container {
+      background: var(--card-bg);
+      border: 1px solid var(--pink-neon);
+      box-shadow: 0 0 25px var(--pink-glow);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      background: rgba(255, 0, 127, 0.15);
+      padding: 1rem;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--pink-neon);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      background: #00ff66;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #00ff66;
+    }
+
+    .chat-messages {
+      height: 350px;
+      padding: 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .msg {
+      max-width: 75%;
+      padding: 0.8rem 1.2rem;
+      border-radius: 4px;
+      font-size: 1rem;
+      line-height: 1.4;
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      background: rgba(0, 243, 255, 0.15);
+      border: 1px solid var(--cyan-neon);
+      color: #fff;
+    }
+
+    .msg.owner {
+      align-self: flex-start;
+      background: rgba(255, 0, 127, 0.15);
+      border: 1px solid var(--pink-neon);
+      color: #fff;
+    }
+
+    .msg-author {
+      font-size: 0.75rem;
+      margin-bottom: 4px;
+      opacity: 0.7;
+      font-weight: bold;
+    }
+
+    .chat-input-bar {
+      display: flex;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .chat-input-bar input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 1rem;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .chat-input-bar button {
+      background: var(--pink-neon);
+      border: none;
+      color: #fff;
+      padding: 0 2rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: background 0.3s ease;
+    }
+
+    .chat-input-bar button:hover {
+      background: #e00070;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">CYBER<span>INK</span></div>
+    <nav>
+      <button onclick="scrollToChat()">Talk to Owner</button>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>NEON & IMPLANT ART</h1>
+    <p>Explore high-tech futuristic designs. Filter by theme or speak directly with the artist in real time.</p>
+    
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterGallery('all')">ALL WORKS</button>
+      <button class="filter-btn" onclick="filterGallery('pink')">PINK COLLECTION</button>
+      <button class="filter-btn" onclick="filterGallery('futuristic')">CYBERNETIC</button>
+    </div>
+  </section>
+
+  <main class="gallery" id="tattoo-gallery"></main>
+
+  <section class="chat-section" id="chat-section">
+    <div class="chat-container">
+      <div class="chat-header">
+        <div class="status-dot"></div>
+        LIVE COMMS // TALK TO SHOP OWNER
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="msg owner">
+          <div class="msg-author">ARTIST / OWNER</div>
+          Welcome to CYBERINK. Send a message below to consult or book a custom session!
+        </div>
+      </div>
+      <form class="chat-input-bar" id="chat-form" onsubmit="sendMessage(event)">
+        <input type="text" id="user-input" placeholder="Type your message..." required autocomplete="off" />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  </section>
+
+  <script>
+    const socket = io();
+    let allTattoos = [];
+    let currentFilter = 'all';
+
+    socket.on('init-tattoos', (tattoos) => {
+      allTattoos = tattoos;
+      renderGallery();
+    });
+
+    socket.on('new-tattoo', (tattoo) => {
+      allTattoos.unshift(tattoo);
+      renderGallery();
+    });
+
+    socket.on('chat-message', (data) => {
+      appendMessage('ARTIST / OWNER', data.text, 'owner');
+    });
+
+    function renderGallery() {
+      const gallery = document.getElementById('tattoo-gallery');
+      gallery.innerHTML = '';
+
+      const filtered = allTattoos.filter(item => {
+        if (currentFilter === 'all') return true;
+        return item.category === currentFilter;
+      });
+
+      filtered.forEach(item => {
+        const isPink = item.category === 'pink';
+        const card = document.createElement('div');
+        card.className = `tattoo-card ${isPink ? 'pink-theme' : ''}`;
+        card.innerHTML = `
+          <img src="${item.img}" alt="${item.title}" loading="lazy" />
+          <div class="tattoo-info">
+            <span class="tattoo-title">${item.title}</span>
+            <span class="badge ${isPink ? 'badge-pink' : 'badge-cyber'}">${item.category}</span>
+          </div>
+        `;
+        gallery.appendChild(card);
+      });
+    }
+
+    function filterGallery(category) {
+      currentFilter = category;
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      renderGallery();
+    }
+
+    function sendMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById('user-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendMessage('YOU', text, 'user');
+      socket.emit('send-message', { text });
+      input.value = '';
+    }
+
+    function appendMessage(author, text, type) {
+      const container = document.getElementById('chat-messages');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `msg ${type}`;
+      msgDiv.innerHTML = `<div class="msg-author">${author}</div>${text}`;
+      container.appendChild(msgDiv);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function scrollToChat() {
+      document.getElementById('chat-section').scrollIntoView({ behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>
